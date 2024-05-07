@@ -72,20 +72,39 @@ for dado in dados_criticos_ordenados:
 # Caminho para o arquivo SQL de saída
 caminho_sql = os.path.join(diretorio_destino, 'insert-dados.sql')
 
-# Nome da tabela e nome das colunas
+
+
+# nome da tabela e coluna 
 nome_tabela = 'dados_finais'
 nomes_colunas = ['created_at', 'product_code', 'customer_code', 'status', 'tipo', 'nome_tipo']
 
+
+# Definir o tamanho do lote para criar inserts
+tamanho_lote = 5
+
 # Abrir o arquivo SQL para escrita
 with open(caminho_sql, 'w') as arquivo_sql:
-    # Inserir o cabecalho do insert
+    # Inserir o cabeçalho do insert
     arquivo_sql.write(f"INSERT INTO {nome_tabela} ({', '.join(nomes_colunas)}) VALUES\n")
 
-    # Escrever os inserts para cada linha de dados criticos
-    for dado in dados_criticos_ordenados:
+    # Inicializar uma lista vazia para armazenar os inserts
+    inserts = []
+
+    # Escrever os inserts para cada linha de dados críticos
+    for i, dado in enumerate(dados_criticos_ordenados, 1):
         valores = [f"'{dado[coluna]}'" if isinstance(dado[coluna], str) else str(dado[coluna]) for coluna in nomes_colunas]
-        linha_insert = f"({', '.join(valores)}),\n"
-        arquivo_sql.write(linha_insert)
+        linha_insert = f"({', '.join(valores)})"
+
+        # Adicionar a linha de insert ao lote atual
+        inserts.append(linha_insert)
+
+        # Verificar se o tamanho do lote foi alcançado ou se é o último registro
+        if i % tamanho_lote == 0 or i == len(dados_criticos_ordenados):
+            # Escrever o lote de inserts no arquivo
+            arquivo_sql.write(',\n'.join(inserts) + ';\n\n')
+
+            # Limpar a lista de inserts para o próximo lote
+            inserts = []
 
 print(f"Arquivo SQL criado em: {caminho_sql}")
 
